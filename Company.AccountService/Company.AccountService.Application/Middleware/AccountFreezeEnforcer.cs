@@ -1,17 +1,25 @@
 ﻿using System.Text.Json;
 using Company.AccountService.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Company.AccountService.Application.Middleware
 {
     public class AccountFreezeEnforcer(RequestDelegate _next,
         ILogger<AccountFreezeEnforcer> _logger,
-        IReadAccountService _readAccountService)
+        IServiceScopeFactory _scopeFactory)
     {
         public async Task InvokeAsync(HttpContext httpContext)
         {
-            var accountId = Guid.NewGuid().ToString();
+            using var scope = _scopeFactory.CreateScope();
+            var readAccountService = 
+                scope.ServiceProvider.GetRequiredService<IReadAccountService>();
+
+            var routeData = RoutingHttpContextExtensions.GetRouteData(httpContext);
+
+            var accountId = routeData?.Values["id"]?.ToString();
 
             if (string.IsNullOrWhiteSpace(accountId))
             {
@@ -23,7 +31,7 @@ namespace Company.AccountService.Application.Middleware
                 return;
             }
 
-            var account = await _readAccountService.GetAccountAsync(new Guid(accountId));
+            var account = await readAccountService.GetAccountAsync(new Guid(accountId));
 
             if (account is null || account.IsFrozen is false)
             {
