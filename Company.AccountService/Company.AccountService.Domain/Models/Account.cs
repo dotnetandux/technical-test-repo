@@ -8,8 +8,8 @@ namespace Company.AccountService.Domain.Models
         public required string AccountNumber { get; set; }
         public required string SortCode { get; set; }
 
-        public decimal Balance { get; set; }
-        public bool IsFrozen { get; set; }
+        public decimal Balance { get; set; } = 0;
+        public bool IsFrozen { get; set; } = false;
 
         protected Account() => Id = Guid.NewGuid();
     }
